@@ -105,16 +105,10 @@ public class RoundKey extends RoundConstant{
     }
 
     private int[] applyXorInLastToResult(int[] auxRound, int currentRound, int word){
-        int aux;
-
+        currentRound = (currentRound == 1) ? currentRound + word - 1 : (currentRound * 4) - 4 + word;
+        
         for (int idx = 0; idx < auxRound.length; idx++) {
-            if (currentRound == 1){
-                aux = currentRound + word - 1;
-            }else {
-                aux = (currentRound * 4) - 4 + word;
-            }
-
-            auxRound[idx] = this.keySchedule[idx][aux] ^ auxRound[idx];
+            auxRound[idx] = this.keySchedule[idx][currentRound] ^ auxRound[idx];
         }
 
         return auxRound;
