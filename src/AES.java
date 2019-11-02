@@ -1,51 +1,25 @@
-import org.apache.commons.codec.binary.Hex;
+public class AES {
+    private int[][] matrixStates;
 
-import java.util.LinkedList;
-import java.util.Queue;
-
-public class AES implements IAES{
-    private char[][] matrixStates;
-
-    public AES(Integer[] key){
-        this.generateStates(Util.intToByte(key));
-        this.showMatrixStates();
+    public AES(){
+        this.matrixStates = new int[4][4];
     }
 
-    private void showMatrixStates() {
-        for (int i = 0; i < matrixStates.length; i++) {
-            for (int j = 0; j < matrixStates[i].length; j++) {
-                System.out.print(matrixStates[i][j] + " - ");
+    public void generateStates(final int[] key){
+        int line = 0, column = 0;
+
+        for (int idx = 0; idx < key.length; idx++) {
+            if (line == 3){
+                column++;
             }
-            System.out.println();
+
+            line = idx % 4;
+
+            this.matrixStates[line][column] = key[idx];
         }
     }
 
-    private void generateStates(byte[] key) {
-        this.matrixStates = new char[4][4];
-
-        Queue<Character> hex = this.generateQueueHex(key);
-
-        for (int i = 0; i < this.matrixStates.length; i++) {
-            for (int j = 0; j < this.matrixStates.length; j++) {
-                this.matrixStates[i][j] = hex.poll();
-            }
-        }
-
-    }
-
-    private Queue<Character> generateQueueHex(byte[] key){
-        char[] hex = Hex.encodeHex(key);
-
-        for (int i = 0; i < hex.length; i++) {
-            System.out.println(hex[i]);
-        }
-
-        Queue<Character> qHex = new LinkedList<>();
-
-        for (int i = 0; i < hex.length; i++) {
-            qHex.add(hex[i]);
-        }
-
-        return qHex;
+    public int[][] getMatrixStates() {
+        return this.matrixStates;
     }
 }
