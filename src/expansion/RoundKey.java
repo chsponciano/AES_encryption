@@ -1,3 +1,7 @@
+package expansion;
+
+import util.SBox;
+
 public class RoundKey extends RoundConstant{
 
     private final int MAX_LINE = 4;
@@ -106,7 +110,7 @@ public class RoundKey extends RoundConstant{
 
     private int[] applyXorInLastToResult(int[] auxRound, int currentRound, int word){
         currentRound = (currentRound == 1) ? currentRound + word - 1 : (currentRound * 4) - 4 + word;
-        
+
         for (int idx = 0; idx < auxRound.length; idx++) {
             auxRound[idx] = this.keySchedule[idx][currentRound] ^ auxRound[idx];
         }

@@ -1,3 +1,6 @@
+import expansion.RoundKey;
+import state.AES;
+
 public class Main {
     public static void main(String[] args) {
         AES aes = new AES();

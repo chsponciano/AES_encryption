@@ -1,3 +1,5 @@
+package util;
+
 public abstract class SBox {
     
     private static final int[][] TABLE_SBOX = {

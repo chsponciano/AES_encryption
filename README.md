@@ -1,6 +1,6 @@
 # AES_encryption
 
-Construa um programa que implemente o algoritmo de criptografia AES. O programa deve atender aos seguintes
+Construa um programa que implemente o algoritmo de criptografia state.AES. O programa deve atender aos seguintes
 requisitos:
 <BR> a) Permitir que o usuário informe um arquivo a ser criptografado. O programa deverá suportar qualquer arquivo
 (texto ou binário);
