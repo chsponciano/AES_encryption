@@ -25,9 +25,9 @@ public class MatrixStates {
 
             line = idx % 4;
 
-            matrixStates[line][column] = key[idx];
+            this.matrixStates[line][column] = key[idx];
         }
 
-        return matrixStates;
+        return this.matrixStates;
     }
 }
