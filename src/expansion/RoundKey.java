@@ -1,19 +1,16 @@
 package expansion;
 
+import util.IRoundKey;
 import util.SBox;
 
-public class RoundKey extends RoundConstant{
-
-    private final int MAX_LINE = 4;
-    private final int MAX_COLUMN = 44;
-    private final int MAX_ROUND = 10;
-
+public class RoundKey extends RoundConstant implements IRoundKey {
     private int[][] keySchedule;
 
     public RoundKey(final int[][] matrixStates){
         this.keyScheduleStartup(matrixStates);
     }
 
+    @Override
     public void execute(){
         int[] copyRound, auxRound, auxConstant;
         int lastModified;
@@ -49,7 +46,7 @@ public class RoundKey extends RoundConstant{
                 updateKeySchedule(lastModified + 1, auxRound);
             }
 
-            System.out.println(this.toString());
+            //System.out.println(this.toString());
         }
     }
     
@@ -116,6 +113,10 @@ public class RoundKey extends RoundConstant{
         }
 
         return auxRound;
+    }
+
+    public int[][] getKeySchedule() {
+        return keySchedule;
     }
 
     @Override
