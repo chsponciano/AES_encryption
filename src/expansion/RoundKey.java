@@ -1,5 +1,7 @@
 package expansion;
 
+import state.RoundConstant;
+import util.Byte;
 import util.IRoundKey;
 import util.SBox;
 
@@ -12,46 +14,43 @@ public class RoundKey extends RoundConstant implements IRoundKey {
 
     @Override
     public void execute(){
-        int[] copyRound, auxRound, auxConstant;
+        int[] copyRound, roundBuffer, constantBuffer;
         int lastModified;
 
-        for (int currentRound = 1; currentRound <= MAX_ROUND; currentRound++) {
-            for (int word = 0; word < MAX_LINE; word++) {
-                lastModified = ((currentRound * MAX_LINE) - 1) + word;
+        for (this.currentRound = 1; this.currentRound <= this.MAX_ROUND; this.currentRound++) {
+            for (int word = 0; word < this.MAX_LINE; word++) {
+                lastModified = ((this.currentRound * this.MAX_LINE) - 1) + word;
 
                 if (word == 0) {
-
                     //Stage1
                     copyRound = this.lastWordCopy(lastModified);
 
                     //Stage2
-                    auxRound = this.rotWord(copyRound);
+                    roundBuffer = this.rotWord(copyRound);
 
                     //Stage3
-                    auxRound = this.subWord(auxRound);
+                    roundBuffer = this.subWord(roundBuffer);
 
                     //Stage4
-                    auxConstant = this.getValueRoundConstant(currentRound);
+                    constantBuffer = this.getValueRoundConstant();
 
                     //Stage5
-                    auxRound = this.applyXorInRoundConstant(auxRound, auxConstant);
+                    roundBuffer = this.applyXorInRoundConstant(roundBuffer, constantBuffer);
 
                 } else {
-                    auxRound = this.lastWordCopy(lastModified);
+                    roundBuffer = this.lastWordCopy(lastModified);
                 }
 
                 //Stage6
-                auxRound = this.applyXorInLastToResult(auxRound, currentRound, word);
+                roundBuffer = this.applyXorInLastToResult(roundBuffer, word);
 
-                updateKeySchedule(lastModified + 1, auxRound);
+                updateKeySchedule(lastModified + 1, roundBuffer);
             }
-
-            //System.out.println(this.toString());
         }
     }
     
     private void keyScheduleStartup(final int[][] matrixStates){
-        this.keySchedule = new int[MAX_LINE][MAX_COLUMN];
+        this.keySchedule = new int[this.MAX_LINE][this.MAX_COLUMN];
 
         for (int line = 0; line < matrixStates.length; line++) {
             for (int column = 0; column < matrixStates[line].length; column++) {
@@ -60,18 +59,20 @@ public class RoundKey extends RoundConstant implements IRoundKey {
         }
     }
 
-    private void updateKeySchedule(final int column, final int[] auxRound){
-        for (int line = 0; line < auxRound.length; line++) {
-            this.keySchedule[line][column] = auxRound[line];
+    private void updateKeySchedule(final int column, final int[] roundBuffer){
+        for (int line = 0; line < roundBuffer.length; line++) {
+            this.keySchedule[line][column] = roundBuffer[line];
         }
     }
 
     private int[] lastWordCopy(final int lastResultRound){
-        int[] copyRound = new int[MAX_LINE];
+        int[] copyRound = new int[this.MAX_LINE];
 
-        for (int idx = 0; idx < MAX_LINE; idx++) {
+        for (int idx = 0; idx < this.MAX_LINE; idx++) {
             copyRound[idx] = this.keySchedule[idx][lastResultRound];
         }
+
+        this.printDebug(copyRound);
 
         return copyRound;
     }
@@ -86,50 +87,46 @@ public class RoundKey extends RoundConstant implements IRoundKey {
             rotate[idx] = copyRound[idx + 1];
         }
 
+        this.printDebug(rotate);
+
         return rotate;
     }
 
-    private int[] subWord(int[] auxRound){
-        for (int idx = 0; idx < auxRound.length; idx++) {
-            auxRound[idx] = SBox.getSboxValue((auxRound[idx] & 0xf0) >> 4, (auxRound[idx] & 0x0f));
+    private int[] subWord(int[] roundBuffer){
+        for (int idx = 0; idx < roundBuffer.length; idx++) {
+            roundBuffer[idx] = SBox.getSboxValue(   Byte.mostSignificantBits(roundBuffer[idx], 4),
+                                                    Byte.leastSignificantBits(roundBuffer[idx]));
         }
 
-        return auxRound;
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
     }
 
-    private int[] applyXorInRoundConstant(int[] auxRound, final int[] auxConstant){
-        for (int idx = 0; idx < auxRound.length; idx++) {
-            auxRound[idx] = auxRound[idx] ^ auxConstant[idx];
+    private int[] applyXorInRoundConstant(int[] roundBuffer, final int[] constantBuffer){
+        for (int idx = 0; idx < roundBuffer.length; idx++) {
+            roundBuffer[idx] = Byte.xor(roundBuffer[idx], constantBuffer[idx]);
         }
 
-        return auxRound;
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
     }
 
-    private int[] applyXorInLastToResult(int[] auxRound, int currentRound, int word){
-        currentRound = (currentRound == 1) ? currentRound + word - 1 : (currentRound * 4) - 4 + word;
+    private int[] applyXorInLastToResult(int[] roundBuffer, int word){
+        int currentRound = (this.currentRound == 1) ? this.currentRound + word - 1 : (this.currentRound * 4) - 4 + word;
 
-        for (int idx = 0; idx < auxRound.length; idx++) {
-            auxRound[idx] = this.keySchedule[idx][currentRound] ^ auxRound[idx];
+        for (int idx = 0; idx < roundBuffer.length; idx++) {
+            roundBuffer[idx] = Byte.xor(this.keySchedule[idx][currentRound], roundBuffer[idx]);
         }
 
-        return auxRound;
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
     }
 
     public int[][] getKeySchedule() {
         return keySchedule;
     }
 
-    @Override
-    public String toString() {
-        String out = "";
-        for (int line = 0; line < this.keySchedule.length; line++) {
-            out += "[";
-            for (int column = 0; column < this.keySchedule[line].length; column++) {
-                out += " 0x" + String.format("%X", this.keySchedule[line][column]) + " ";
-            }
-            out += "]\n";
-        }
-
-        return out;
-    }
 }

@@ -1,13 +1,14 @@
 package encryption;
 
-import expansion.RoundConstant;
-import util.IRoundKey;
-import util.SBox;
+import state.RoundConstant;
+import util.*;
+import util.Byte;
 
 public class RoundKey extends RoundConstant implements IRoundKey {
 
     private int[][] matrixStates;
     private int[][] plainText;
+    private int[][] resultEncrypt;
 
     public RoundKey(final int[][] matrixStates, final int[][] plainText){
         this.matrixStates = matrixStates;
@@ -16,107 +17,142 @@ public class RoundKey extends RoundConstant implements IRoundKey {
 
     @Override
     public void execute() {
-        //Stage1
-        int[][] auxRound = this.addRoundKey(this.plainText, this.getRound(0));
+        this.resultEncrypt = null;
+        this.currentRound = 0;
 
-        for (int currentRound = 1; currentRound < MAX_ROUND; currentRound++) {
+        //Stage1
+        int[][] roundBuffer = this.addRoundKey(this.plainText, this.getRound());
+
+        for (this.currentRound = 1; this.currentRound < this.MAX_ROUND; this.currentRound++) {
             //Stage2
-            auxRound = this.subBytes(auxRound);
+            roundBuffer = this.subBytes(roundBuffer);
 
             //Stage3
-            auxRound = this.shiftRows(auxRound);
+            roundBuffer = this.shiftRows(roundBuffer);
 
             //Stage4
-            auxRound = this.mixColumns(auxRound);
+            roundBuffer = this.mixedColumns(roundBuffer);
 
             //Stage5
-            auxRound = this.addRoundKey(auxRound, this.getRound(currentRound));
+            roundBuffer = this.addRoundKey(roundBuffer, this.getRound());
         }
 
         //Stage6
-        auxRound = this.subBytes(auxRound);
-        auxRound = this.shiftRows(auxRound);
-        auxRound = this.addRoundKey(auxRound, this.getRound(10));
+        roundBuffer = this.subBytes(roundBuffer);
+        roundBuffer = this.shiftRows(roundBuffer);
 
-
-        printRound(auxRound);
+        this.currentRound = 10;
+        this.resultEncrypt = this.addRoundKey(roundBuffer, this.getRound());
     }
 
-    private int[][] mixColumns(int[][] auxRound) {
-        return null;
-    }
+    private int[][] mixedColumns(int[][] roundBuffer) {
+        int size = roundBuffer.length, multiplier, elementShiftRows, result;
+        int[][] mixColumns = new int[size][size];
+        int[] temp;
 
-    private int[][] shiftRows(int[][] auxRound) {
-        int[] auxShift = new int[3];
-        int len = auxRound.length;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
 
-        //line1 - 1 2 3 0
-        auxShift[0] = auxRound[1][0];
-        for (int i = 0; i < len - 1; i++) {
-            auxRound[1][i] = auxRound[1][i + 1];
-        }
-        auxRound[1][len - 1] = auxShift[0];
+                temp = new int[size];
+                for (int k = 0; k < MatrixMultiplication.getLengthMatrix(); k++) {
+                    multiplier = MatrixMultiplication.getMatrixMultiplicationValue(j, k);
+                    elementShiftRows = roundBuffer[k][i];
+                    result = 0;
 
-        //line2 - 2 3 0 1
-        auxShift[0] = auxRound[2][0];
-        auxShift[1] = auxRound[2][1];
-        for (int i = 0; i < len - 2; i++) {
-            auxRound[2][i] = auxRound[1][i + 1];
-        }
-        auxRound[2][len - 2] = auxShift[0];
-        auxRound[2][len - 1] = auxShift[1];
+                    if (elementShiftRows == 1) {
+                        result = multiplier;
 
-        //line3 - 3 0 1 2
-        for (int i = 0; i < len - 1; i++) {
-            auxShift[i] = auxRound[3][i];
-        }
-        auxRound[3][0] = auxRound[3][len - 1];
-        for (int i = 0; i < len - 1; i++) {
-            auxRound[3][i + 1] = auxShift[i];
-        }
+                    } else if (multiplier == 1){
+                        result = elementShiftRows;
 
-        return auxRound;
-    }
+                    } else if (multiplier != 0 && elementShiftRows != 0) {
+                        result = (LBox.getLBoxValue(Byte.mostSignificantBits(elementShiftRows, 4),
+                                                    Byte.leastSignificantBits(elementShiftRows))
 
-    private int[][] subBytes(int[][] auxRound) {
-        for (int i = 0; i < auxRound.length; i++) {
-            for (int j = 0; j < auxRound[i].length; j++) {
-                auxRound[i][j] = SBox.getSboxValue((auxRound[i][j] & 0xf0) >> 4, (auxRound[i][j] & 0x0f));
+                                + LBox.getLBoxValue(Byte.mostSignificantBits(multiplier, 4),
+                                                    Byte.leastSignificantBits(multiplier)));
+
+                        result = Byte.exceededLimit(result);
+
+                        result = EBox.getEBoxValue( Byte.mostSignificantBits(result, 4),
+                                                    Byte.leastSignificantBits(result));
+                    }
+
+                    temp[k] = result;
+                }
+
+                mixColumns[j][i] = Byte.xor(temp);
             }
         }
 
-        return auxRound;
+        this.printDebug(roundBuffer);
+
+        return mixColumns;
     }
 
-    private void printRound(int[][] auxRound){
-        for (int i = 0; i < auxRound.length; i++) {
-            for (int j = 0; j < auxRound[i].length; j++) {
-                System.out.print("0x" + String.format("%X", auxRound[i][j]) + " ");
-            }
-            System.out.println();
-        }
-    }
+    private int[][] shiftRows(int[][] roundBuffer) {
+        int[] shiftBuffer = new int[3];
 
-    private int[][] getRound(int round){
-        int[][] auxRound = new int[4][4];
-        round *= 4;
-
-        for (int r = round, i = 0; r < round + 4; r++, i++) {
-            for (int j = 0; j < 4; j++) {
-                auxRound[i][j] = this.matrixStates[r][j];
-            }
+        for (int i = 1; i < roundBuffer.length; i++) {
+            System.arraycopy(roundBuffer[i], 0, shiftBuffer, 0, i);
+            System.arraycopy(roundBuffer[i], i, roundBuffer[i], 0, roundBuffer[i].length - i);
+            System.arraycopy(shiftBuffer, 0, roundBuffer[i], roundBuffer[i].length - i, i);
         }
 
-        return auxRound;
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
     }
 
-    private int[][] addRoundKey(int[][] compare, int[][] round){
-        for (int i = 0; i < round.length; i++) {
-            for (int j = 0; j < round[i].length; j++) {
-                round[i][j] = compare[i][j] ^ round[i][j];
+    private int[][] subBytes(int[][] roundBuffer) {
+        for (int i = 0; i < roundBuffer.length; i++) {
+            for (int j = 0; j < roundBuffer[i].length; j++) {
+                roundBuffer[i][j] = SBox.getSboxValue(  Byte.mostSignificantBits(roundBuffer[i][j], 4),
+                                                        Byte.leastSignificantBits(roundBuffer[i][j]));
             }
         }
 
-        return round;
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
+    }
+
+    private int[][] addRoundKey(int[][] compareBuffer, int[][] roundBuffer){
+        for (int i = 0; i < roundBuffer.length; i++) {
+            for (int j = 0; j < roundBuffer[i].length; j++) {
+                roundBuffer[i][j] = compareBuffer[i][j] ^ roundBuffer[i][j];
+            }
+        }
+
+        this.printDebug(roundBuffer);
+
+        return roundBuffer;
+    }
+
+    public byte[] getResultEncrypt() {
+        int size = this.resultEncrypt.length;
+        int counterBuffer = 0;
+        byte[] buffer = new byte[size * size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++, counterBuffer++) {
+                buffer[counterBuffer] = new Integer(this.resultEncrypt[i][j]).byteValue();
+            }
+        }
+        return buffer;
+    }
+
+    private int[][] getRound(){
+        int size = this.matrixStates.length;
+        int[][] roundBuffer = new int[size][size];
+        int currentRound = this.currentRound * 4;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0, r = currentRound; r < currentRound + size; r++, j++) {
+                roundBuffer[i][j] = this.matrixStates[i][r];
+            }
+        }
+
+        return roundBuffer;
     }
 }

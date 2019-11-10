@@ -15,17 +15,18 @@ public class MatrixStates {
         return instance;
     }
 
-    public int[][] generateStates(final int[] key){
+    public int[][] generateStates(final int[] content){
         int line = 0, column = 0;
 
-        for (int idx = 0; idx < key.length; idx++) {
+        for (int idx = 0; idx < content.length; idx++) {
+
             if (line == 3){
                 column++;
             }
 
             line = idx % 4;
 
-            this.matrixStates[line][column] = key[idx];
+            this.matrixStates[line][column] = content[idx];
         }
 
         return this.matrixStates;
