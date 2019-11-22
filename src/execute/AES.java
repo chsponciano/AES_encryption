@@ -38,7 +38,7 @@ public class AES {
                 temp[j] = Byte.byteToInteger(content[i + j]);
             }
 
-            blocks.add(new Block(new MatrixStates().generateStates(temp)));
+            blocks.add(new Block(new MatrixStates(temp)));
         }
 
         return blocks;
@@ -46,14 +46,14 @@ public class AES {
 
     public List<Block> execute() {
         try {
-            expansion.RoundKey expansion = new expansion.RoundKey(new MatrixStates().generateStates(this.key));
+            expansion.RoundKey expansion = new expansion.RoundKey(new MatrixStates(this.key).getContent());
             expansion.execute();
 
             encryption.RoundKey encryption;
             for (Block block : this.content) {
                 encryption = new encryption.RoundKey(expansion.getKeySchedule(), block.getMatrixStates());
                 encryption.execute();
-                block.setMatrixStates(encryption.getResultEncrypt());
+                block.setMatrixStates(new MatrixStates(encryption.getResultEncrypt()));
             }
 
             return this.content;

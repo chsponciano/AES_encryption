@@ -133,19 +133,6 @@ public class RoundKey extends RoundConstant implements IRoundKey {
         return this.resultEncrypt;
     }
 
-    //    public byte[] getResultEncrypt() {
-//        int size = this.resultEncrypt.length;
-//        int counterBuffer = 0;
-//        byte[] buffer = new byte[size * size];
-//
-//        for (int i = 0; i < size; i++) {
-//            for (int j = 0; j < size; j++, counterBuffer++) {
-//                buffer[counterBuffer] = new Integer(this.resultEncrypt[i][j]).byteValue();
-//            }
-//        }
-//        return buffer;
-//    }
-
     private int[][] getRound(){
         int size = this.matrixStates.length;
         int[][] roundBuffer = new int[size][size];
