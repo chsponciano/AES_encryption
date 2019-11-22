@@ -1,18 +1,10 @@
 package state;
 
 public class MatrixStates {
-    private static MatrixStates instance;
-    int[][] matrixStates;
+    private int[][] matrixStates;
 
-    private MatrixStates(){
+    public MatrixStates(){
         this.matrixStates = new int[4][4];
-    }
-
-    public static MatrixStates getInstance() {
-        if (instance == null) {
-            instance = new MatrixStates();
-        }
-        return instance;
     }
 
     public int[][] generateStates(final int[] content){

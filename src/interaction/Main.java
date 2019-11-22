@@ -1,6 +1,7 @@
 package interaction;
 
 import execute.AES;
+import state.Block;
 import util.Byte;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
 
 public abstract class Main {
@@ -58,7 +60,6 @@ public abstract class Main {
     }
 
     public static void main(String[] args) {
-        // content = DESENVOLVIMENTO!
         String pathFileIn = getValidFile(true, true);
         String pathFileOut = getValidFile(false, false);
         String filename = null;
@@ -68,7 +69,6 @@ public abstract class Main {
             filename = SCN.nextLine();
         }
 
-        // Key = 65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80
         System.out.print("Digite a chave de criptografia: ");
         String keyStr = SCN.nextLine();
 
@@ -77,9 +77,15 @@ public abstract class Main {
 
         try{
             AES aes = new AES(Byte.streamToByteArray(new FileInputStream(pathFileIn)), keyStr, debug);
-            byte[] result = aes.execute();
+            List<Block> encryptedBlocks = aes.execute();
+            byte[] blocksBytes = null;
 
-            createFile(Paths.get(pathFileOut), filename, result);
+            for (Block block : encryptedBlocks) {
+                blocksBytes = (blocksBytes == null) ? block.convertStateToByte() :
+                        Byte.addBytesToList(block.convertStateToByte(), blocksBytes);
+            }
+
+            createFile(Paths.get(pathFileOut), filename, blocksBytes);
 
             System.out.println("Arquivo criptografado gerado com sucesso!");
         } catch (Exception ex){

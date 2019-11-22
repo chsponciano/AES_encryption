@@ -1,5 +1,7 @@
 package util;
 
+import state.RoundConstant;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,10 +40,10 @@ public abstract class Byte {
 
     private static byte[] pcks5(byte[] b){
         int size = b.length;
-        Integer bufferRest = size % 8;
+        Integer bufferRest = size % RoundConstant.MAX_BYTE;
 
         if (bufferRest != 0) {
-            bufferRest = 8 - bufferRest;
+            bufferRest = RoundConstant.MAX_BYTE - bufferRest;
 
             byte[] buffer = new byte[size + bufferRest];
             for (int i = 0; i < size; i++) {
@@ -57,6 +59,13 @@ public abstract class Byte {
         }
 
         return b;
+    }
+
+    public static byte[] addBytesToList(final byte[] newMembers, final byte[] currentMembers) {
+        byte[] newListByte = new byte[currentMembers.length + newMembers.length];
+        System.arraycopy(currentMembers, 0, newListByte, 0, currentMembers.length);
+        System.arraycopy(newMembers, 0, newListByte, currentMembers.length, newMembers.length);
+        return newListByte;
     }
 
     public static byte[] streamToByteArray(InputStream is) throws IOException {
